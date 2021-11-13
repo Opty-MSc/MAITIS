@@ -1,0 +1,28 @@
+lb          ansible_host=15.161.91.240  ansible_user=ubuntu ansible_connection=ssh
+monitor     ansible_host=15.160.32.163  ansible_user=ubuntu ansible_connection=ssh
+addServer   ansible_host=10.0.1.51      ansible_user=ubuntu ansible_connection=ssh
+subServer   ansible_host=10.0.1.52      ansible_user=ubuntu ansible_connection=ssh
+mulServer   ansible_host=10.0.1.53      ansible_user=ubuntu ansible_connection=ssh
+divServer   ansible_host=10.0.1.54      ansible_user=ubuntu ansible_connection=ssh
+
+[front]
+lb
+
+[monit]
+monitor
+
+[targets]
+lb
+addServer
+subServer
+mulServer
+divServer
+
+[gatewayed]
+addServer
+subServer
+mulServer
+divServer
+
+[gatewayed:vars]
+ansible_ssh_common_args= ' -o ProxyCommand="ssh -i keypair/agisit -W %h:%p -q ubuntu@15.160.32.163 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"'

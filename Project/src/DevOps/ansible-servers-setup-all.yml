@@ -1,0 +1,84 @@
+- hosts: targets
+  gather_facts: True
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - name: Equivalent to apt get update
+      apt:
+        update_cache: yes
+
+    - name: Install reqired packages
+      apt: 
+        name:
+          - nginx
+          - nodejs
+          - npm
+        state: present
+        autoclean: yes
+
+    - name: Upload server source code
+      copy:
+        src: ../Calculator/{{inventory_hostname}}
+        dest: /home/ubuntu
+
+
+    - name: NPM installation
+      shell: npm i
+      args:
+        chdir: /home/ubuntu/{{inventory_hostname}}
+
+    - name: Install PM2
+      npm:
+        name: pm2
+        global: yes
+
+    - name: Start server process
+      shell: pm2 stop all; pm2 start src/index.js
+      args:
+        chdir: /home/ubuntu/{{inventory_hostname}}
+
+
+- hosts: front
+  gather_facts: True
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+
+  tasks:
+
+    - name: Deploy website content
+      template:
+        src: ../Calculator/front/index.html
+        dest: /var/www/html/index.html
+
+
+- hosts: monit
+  gather_facts: True
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+
+  roles:
+
+    - role: cloudalchemy.grafana
+      vars:
+        grafana_security:
+          admin_user: admin
+          admin_password: admin
+
+    - role: cloudalchemy.prometheus
+      vars:
+        prometheus_alert_rules_files: []
+        prometheus_static_targets_files: []
+        prometheus_targets:
+          node:
+          - targets:
+            - 10.0.0.50:8090
+            - 10.0.1.51:8090
+            - 10.0.1.52:8090
+            - 10.0.1.53:8090
+            - 10.0.1.54:8090
+            labels:
+              env: demosite
